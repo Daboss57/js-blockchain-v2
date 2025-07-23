@@ -38,6 +38,15 @@ function connectToBootstrapServer() {
           }
       }
   });
+
+  ws.on('error', (err) => {
+      console.error('Error connecting to bootstrap server:', err.message);
+  });
+
+  ws.on('close', () => {
+      console.warn('Connection to bootstrap server closed. Retrying in 5 seconds...');
+      setTimeout(connectToBootstrapServer, 5000);
+  });
 }
 
 function connectToPeer(peerUrl) {
@@ -200,15 +209,19 @@ class Blockchain {
 
     addBlock(newBlock) {
         // Validate the new block before adding it
-        if (newBlock.previousHash === this.getLatestBlock().hash && 
-            newBlock.hash === newBlock.calculateHash() &&
-            newBlock.index === this.chain.length) {
+        if (this.isValidNewBlock(newBlock)) {
             this.chain.push(newBlock);
             console.log('Block added to chain');
             return true;
         }
         console.log('Invalid block rejected');
         return false;
+    }
+
+    isValidNewBlock(newBlock) {
+        return newBlock.previousHash === this.getLatestBlock().hash &&
+            newBlock.hash === newBlock.calculateHash() &&
+            newBlock.index === this.chain.length;
     }
 }
 
